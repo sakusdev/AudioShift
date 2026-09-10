@@ -4,131 +4,51 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AudioShift</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0d0f12;color:#eee;font-family:system-ui,-apple-system,sans-serif}.app{max-width:960px;margin:auto;padding:22px}.drop{padding:38px;border:2px dashed #505762;border-radius:16px;text-align:center;cursor:pointer;background:#15181d}.drop.over{border-color:#fff;background:#1b1f25}.card{background:#15181d;border:1px solid #292e37;border-radius:14px;padding:16px;margin-top:14px}.row{display:grid;grid-template-columns:75px 1fr 82px;gap:12px;align-items:center;margin:13px 0}input[type=range]{width:100%}output{text-align:right;font-variant-numeric:tabular-nums}button{padding:9px 13px;border-radius:9px;border:1px solid #444;background:#282d35;color:#fff;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}button.primary{background:#eee;color:#111}canvas{display:block;width:100%;height:155px;background:#090b0e;border-radius:10px}.status{color:#aab1bc;font-size:13px;margin-top:9px;min-height:18px}audio{width:100%;margin-top:12px}.buttons{display:flex;gap:8px;flex-wrap:wrap}.hint{color:#7f8792;font-size:12px}@media(max-width:600px){.app{padding:12px}.row{grid-template-columns:58px 1fr 68px}}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0d0f12;color:#eee;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:1000px;margin:auto;padding:18px}.drop{padding:34px;border:2px dashed #505762;border-radius:16px;text-align:center;cursor:pointer;background:#15181d}.drop.over{border-color:#fff;background:#1b1f25}.card{background:#15181d;border:1px solid #292e37;border-radius:14px;padding:15px;margin-top:12px}.row{display:grid;grid-template-columns:85px 1fr 78px;gap:11px;align-items:center;margin:11px 0}input[type=range]{width:100%}output{text-align:right;font-variant-numeric:tabular-nums}button{padding:8px 12px;border-radius:9px;border:1px solid #444;background:#282d35;color:#fff;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}button.primary{background:#eee;color:#111}.buttons{display:flex;gap:7px;flex-wrap:wrap}canvas{display:block;width:100%;height:155px;background:#090b0e;border-radius:10px}.status{color:#aab1bc;font-size:13px;margin-top:8px;min-height:18px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.small{font-size:12px;color:#858d98}.section-title{font-weight:700;margin-bottom:8px}.badge{display:inline-block;padding:3px 7px;border:1px solid #444;border-radius:999px;font-size:11px;color:#aeb6c0}.pitchBtns{display:flex;gap:5px;flex-wrap:wrap}.pitchBtns button{min-width:44px;padding:6px}.meter{height:5px;background:#252a31;border-radius:99px;overflow:hidden;margin-top:7px}.meter i{display:block;height:100%;width:0;background:#bbb}.hint{color:#777f8a;font-size:11px;line-height:1.5}@media(max-width:680px){.app{padding:10px}.row{grid-template-columns:62px 1fr 68px}.grid2{grid-template-columns:1fr}}
 </style>
 </head>
 <body><main class="app">
-<h1>🎛 AudioShift</h1>
+<h1>🎛 AudioShift <span class="badge">Realtime Preview</span></h1>
 <div id="drop" class="drop"><b>音声ファイルをドロップ</b><br><small>クリックして選択</small><input id="file" type="file" accept="audio/*" hidden></div>
-<div class="card"><canvas id="wave"></canvas><div id="status" class="status">ファイルを読み込んでください</div></div>
+<div class="card"><canvas id="wave"></canvas><div id="status" class="status">ファイルを読み込んでください</div><div class="meter"><i id="progress"></i></div></div>
 <div class="card">
+<div class="section-title">Time / Pitch</div>
 <div class="row"><label>速度</label><input id="speed" type="range" min=".25" max="4" step=".01" value="1"><output id="speedV">1.00×</output></div>
 <div class="row"><label>ピッチ</label><input id="pitch" type="range" min="-24" max="24" step=".01" value="0"><output id="pitchV">+0.00 st</output></div>
 <div class="row"><label>Fine</label><input id="fine" type="range" min="-100" max="100" step="1" value="0"><output id="fineV">+0 ct</output></div>
-<label><input id="tape" type="checkbox"> Tape mode（速度にピッチを追従）</label>
-<div style="margin-top:12px"><button id="reset">Reset</button></div>
-<p class="hint">通常モードは速度とピッチを独立処理。Granular OLA方式のプレビュー／書き出しです。</p>
+<div class="pitchBtns"><button data-p="-12">−12</button><button data-p="-7">−7</button><button data-p="-1">−1</button><button data-p="0">0</button><button data-p="1">+1</button><button data-p="7">+7</button><button data-p="12">+12</button></div>
+<p><label><input id="tape" type="checkbox"> Tape mode（速度にピッチを追従）</label>　<button id="reset">Reset</button></p>
+<div class="small">通常モード：速度とピッチ独立。Tape：テープ／サンプラーのように速度変更でピッチも変化。</div>
 </div>
-<div class="card">
-<div class="buttons"><button id="play" class="primary" disabled>▶ Preview</button><button id="stop" disabled>■ Stop</button><button id="export" disabled>⬇ WAV Export</button></div>
-<audio id="native" controls></audio>
-</div>
+<div class="card grid2">
+<div><div class="section-title">Mix</div>
+<div class="row"><label>Volume</label><input id="volume" type="range" min="0" max="1.5" step=".01" value="1"><output id="volumeV">100%</output></div>
+<div class="row"><label>Pan</label><input id="pan" type="range" min="-1" max="1" step=".01" value="0"><output id="panV">0</output></div>
+<div class="row"><label>Low</label><input id="low" type="range" min="-18" max="18" step=".1" value="0"><output id="lowV">0 dB</output></div>
+<div class="row"><label>High</label><input id="high" type="range" min="-18" max="18" step=".1" value="0"><output id="highV">0 dB</output></div></div>
+<div><div class="section-title">Playback</div>
+<div class="row"><label>Loop</label><input id="loop" type="checkbox"><output id="loopV">OFF</output></div>
+<div class="row"><label>Quality</label><select id="quality" style="width:100%;padding:8px;background:#22262d;color:#fff;border:1px solid #444;border-radius:8px"><option value="fast">Fast — 35ms</option><option value="normal" selected>Normal — 55ms</option><option value="high">High — 80ms</option></select><output></output></div>
+<div class="small">Previewは常時リアルタイム。Quality変更も再Render不要。</div>
+</div></div>
+<div class="card"><div class="buttons"><button id="play" class="primary" disabled>▶ Preview</button><button id="stop" disabled>■ Stop</button><button id="export" disabled>⬇ WAV Export</button></div><p class="hint">PreviewではRendering待ちなし。ExportだけOffline Renderします。</p></div>
 </main>
 <script>
-const $=id=>document.getElementById(id);
-let ctx=null,buffer=null,source=null,rendered=null,renderToken=0;
+const $=id=>document.getElementById(id);let ctx=null,buffer=null,node=null,graph=null,playing=false,playTimer=0,workletReady=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const pitchRatio=()=>Math.pow(2,(+$('pitch').value + +$('fine').value/100)/12);
-
-async function decode(file){
-  stop(); rendered=null; $('native').removeAttribute('src');
-  $('status').textContent='Reading file…';
-  try{
-    const bytes=await file.arrayBuffer();
-    if(!bytes.byteLength) throw Error('empty file');
-    ctx=ctx||new AudioContext();
-    if(ctx.state==='suspended') await ctx.resume();
-    $('status').textContent='Decoding…';
-    buffer=await ctx.decodeAudioData(bytes.slice(0));
-    $('status').textContent=`Ready • ${buffer.duration.toFixed(2)} sec • ${buffer.sampleRate} Hz • ${buffer.numberOfChannels}ch`;
-    draw(); $('play').disabled=$('export').disabled=false; $('stop').disabled=false;
-  }catch(e){console.error(e);buffer=null;$('play').disabled=$('export').disabled=$('stop').disabled=true;$('status').textContent='Decode failed: '+(e.message||'unsupported/corrupt audio')}
-}
-
-function draw(){
-  if(!buffer)return; const c=$('wave'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;
-  c.width=Math.max(1,r.width*d);c.height=155*d;const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);
-  x.clearRect(0,0,r.width,155);const data=buffer.getChannelData(0),step=Math.max(1,Math.floor(data.length/r.width));
-  x.beginPath();
-  for(let i=0;i<r.width;i++){let a=i*step,b=Math.min(data.length,a+step),mn=1,mx=-1;for(let j=a;j<b;j++){const v=data[j];if(v<mn)mn=v;if(v>mx)mx=v}x.moveTo(i,77.5+mn*62);x.lineTo(i,77.5+mx*62)}
-  x.strokeStyle='#aeb6c0';x.stroke();x.strokeStyle='#30353d';x.beginPath();x.moveTo(0,77.5);x.lineTo(r.width,77.5);x.stroke();
-}
-
-function labels(){
-  $('speedV').textContent=(+$('speed').value).toFixed(2)+'×';
-  $('pitchV').textContent=(+$('pitch').value>=0?'+':'')+(+$('pitch').value).toFixed(2)+' st';
-  $('fineV').textContent=(+$('fine').value>=0?'+':'')+$('fine').value+' ct';
-  $('pitch').disabled=$('fine').disabled=$('tape').checked;
-}
-
-function stop(){if(source){try{source.stop()}catch{}source=null}if(buffer)$('status').textContent=`Ready • ${buffer.duration.toFixed(2)} sec • ${buffer.sampleRate} Hz • ${buffer.numberOfChannels}ch`}
-
-// Lightweight granular overlap-add renderer. The source read head advances at the
-// requested tempo while samples inside each grain are read at the requested pitch.
-async function renderGranular(){
-  if(!buffer)return null;
-  const token=++renderToken;
-  const speed=+$('speed').value;
-  const tape=$('tape').checked;
-  const pr=tape?speed:pitchRatio();
-  const grainMs=55, hopMs=18;
-  const sr=buffer.sampleRate, grain=Math.max(256,Math.round(sr*grainMs/1000));
-  const hop=Math.max(64,Math.round(sr*hopMs/1000));
-  const outDuration=buffer.duration/speed;
-  const outFrames=Math.max(1,Math.ceil(outDuration*sr));
-  const out=ctx.createBuffer(buffer.numberOfChannels,outFrames,sr);
-  const win=new Float32Array(grain);
-  for(let i=0;i<grain;i++) win[i]=0.5-0.5*Math.cos(2*Math.PI*i/(grain-1));
-  const srcStep=hop*speed;
-  const srcChannels=[];for(let ch=0;ch<buffer.numberOfChannels;ch++)srcChannels.push(buffer.getChannelData(ch));
-  const dstChannels=[];for(let ch=0;ch<out.numberOfChannels;ch++)dstChannels.push(out.getChannelData(ch));
-  const totalGrains=Math.ceil(outFrames/hop);
-  for(let g=0;g<totalGrains;g++){
-    if(token!==renderToken) return null;
-    const outStart=g*hop, srcCenter=g*srcStep;
-    for(let i=0;i<grain && outStart+i<outFrames;i++){
-      const srcPos=srcCenter+(i-grain/2)*pr;
-      if(srcPos<0 || srcPos>=buffer.length-1) continue;
-      const k=srcPos|0, f=srcPos-k, w=win[i];
-      for(let ch=0;ch<dstChannels.length;ch++){
-        const s=srcChannels[ch]; dstChannels[ch][outStart+i]+=(s[k]*(1-f)+s[k+1]*f)*w;
-      }
-    }
-    if((g&31)===0){$('status').textContent=`Rendering… ${Math.min(100,Math.round(g/totalGrains*100))}%`;await new Promise(requestAnimationFrame)}
-  }
-  // Normalize overlap gain conservatively.
-  const gain=0.82;
-  for(const ch of dstChannels)for(let i=0;i<ch.length;i++)ch[i]*=gain;
-  if(token!==renderToken)return null;
-  rendered=out;$('status').textContent=`Rendered • ${out.duration.toFixed(2)} sec`;
-  return out;
-}
-
-async function preview(){
-  if(!buffer)return;stop();
-  const b=await renderGranular();if(!b)return;
-  source=ctx.createBufferSource();source.buffer=b;source.connect(ctx.destination);source.onended=()=>{if(source){source=null;if(buffer)$('status').textContent=`Rendered • ${b.duration.toFixed(2)} sec`}};source.start();$('status').textContent='Playing rendered audio…';
-}
-
-function audioBufferToWav(b){
-  const channels=b.numberOfChannels,sr=b.sampleRate,frames=b.length,bytes=2,ab=new ArrayBuffer(44+frames*channels*bytes),v=new DataView(ab);let o=0;
-  const w=(s)=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i))};const u16=x=>{v.setUint16(o,x,true);o+=2};const u32=x=>{v.setUint32(o,x,true);o+=4};
-  w('RIFF');u32(36+frames*channels*2);w('WAVE');w('fmt ');u32(16);u16(1);u16(channels);u32(sr);u32(sr*channels*2);u16(channels*2);u16(16);w('data');u32(frames*channels*2);
-  for(let i=0;i<frames;i++)for(let ch=0;ch<channels;ch++){const x=clamp(b.getChannelData(ch)[i],-1,1);v.setInt16(o,x<0?x*32768:x*32767,true);o+=2}return new Blob([ab],{type:'audio/wav'});
-}
-
-async function exportWav(){
-  if(!buffer)return; $('export').disabled=true;const b=await renderGranular();if(!b){$('export').disabled=false;return}
-  const url=URL.createObjectURL(audioBufferToWav(b));$('native').src=url;$('native').load();
-  const a=document.createElement('a');a.href=url;a.download='AudioShift.wav';a.click();$('export').disabled=false;$('status').textContent=`Exported • ${b.duration.toFixed(2)} sec`;
-}
-
-$('drop').onclick=()=>$('file').click();$('file').onchange=e=>e.target.files[0]&&decode(e.target.files[0]);
-['dragenter','dragover'].forEach(v=>$('drop').addEventListener(v,e=>{e.preventDefault();$('drop').classList.add('over')}));
-['dragleave','drop'].forEach(v=>$('drop').addEventListener(v,e=>{e.preventDefault();$('drop').classList.remove('over')}));
-$('drop').ondrop=e=>{const f=e.dataTransfer.files[0];if(f)decode(f)};
-$('play').onclick=preview;$('stop').onclick=stop;$('export').onclick=exportWav;
-['speed','pitch','fine','tape'].forEach(id=>$(id).oninput=labels);
-$('reset').onclick=()=>{$('speed').value=1;$('pitch').value=0;$('fine').value=0;$('tape').checked=false;labels()};
-addEventListener('resize',draw);labels();
+const ratio=()=>Math.pow(2,(+$('pitch').value + +$('fine').value/100)/12);
+const grainMs=()=>({fast:35,normal:55,high:80})[$('quality').value];
+const workletCode=`class AudioShiftProcessor extends AudioWorkletProcessor{constructor(){super();this.ch=[];this.n=0;this.speed=1;this.pitch=1;this.loop=false;this.playing=false;this.grain=2646;this.hop=864;this.sr=sampleRate;this.offset=0;this.port.onmessage=e=>{const m=e.data;if(m.type==='buffer'){this.ch=m.channels.map(x=>new Float32Array(x));this.n=this.ch[0]?.length||0;this.offset=m.offset||0;this.playing=true}else if(m.type==='params'){if(m.speed!=null)this.speed=m.speed;if(m.pitch!=null)this.pitch=m.pitch;if(m.loop!=null)this.loop=m.loop;if(m.grain!=null){this.grain=m.grain;this.hop=Math.max(64,Math.floor(this.grain*.33))}}else if(m.type==='stop')this.playing=false;else if(m.type==='seek')this.offset=m.offset||0}}process(inputs,outputs){const o=outputs[0],L=o[0],R=o[1]||o[0];if(!this.playing||!this.n){L.fill(0);if(R!==L)R.fill(0);return true}const g=this.grain,h=this.hop,N=this.n,s=this.speed,p=this.pitch;for(let i=0;i<L.length;i++){const outPos=this.offset+i;let yL=0,yR=0,wSum=0;const base=Math.floor(outPos/h)*h;for(let k=-3;k<=0;k++){const gs=base+k*h;if(gs<0)continue;const local=outPos-gs;if(local<0||local>=g)continue;const srcCenter=gs*s;const sp=srcCenter+(local-g*.5)*p;let q=sp;if(this.loop){q=((q%N)+N)%N}else if(q<0||q>=N-1)continue;const a=Math.floor(q),f=q-a;const w=.5-.5*Math.cos(2*Math.PI*local/(g-1));const l=this.ch[0][a]*(1-f)+this.ch[0][Math.min(a+1,N-1)]*f;const rr=this.ch[1]?this.ch[1][a]*(1-f)+this.ch[1][Math.min(a+1,N-1)]*f:l;yL+=l*w;yR+=rr*w;wSum+=w}if(wSum){yL/=Math.max(.7,wSum);yR/=Math.max(.7,wSum)}L[i]=yL;R[i]=yR}this.offset+=L.length;return true}}registerProcessor('audioshift',AudioShiftProcessor);`;
+async function init(){if(!ctx)ctx=new AudioContext();if(ctx.state==='suspended')await ctx.resume();if(!workletReady){const u=URL.createObjectURL(new Blob([workletCode],{type:'application/javascript'}));await ctx.audioWorklet.addModule(u);URL.revokeObjectURL(u);workletReady=true}}
+async function decode(file){stop();$('status').textContent='Reading file…';$('progress').style.width='0%';try{const bytes=await file.arrayBuffer();if(!bytes.byteLength)throw Error('empty file');await init();$('status').textContent='Decoding…';buffer=await ctx.decodeAudioData(bytes.slice(0));$('status').textContent=`Ready • ${buffer.duration.toFixed(2)} sec • ${buffer.sampleRate} Hz • ${buffer.numberOfChannels}ch`;draw();$('play').disabled=$('export').disabled=false;$('stop').disabled=false}catch(e){console.error(e);buffer=null;$('play').disabled=$('export').disabled=$('stop').disabled=true;$('status').textContent='Decode failed: '+(e.message||'unsupported/corrupt audio')}}
+function draw(){if(!buffer)return;const c=$('wave'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=Math.max(1,r.width*d);c.height=155*d;const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,r.width,155);const a=buffer.getChannelData(0),step=Math.max(1,Math.floor(a.length/r.width));x.beginPath();for(let i=0;i<r.width;i++){let p=i*step,e=Math.min(a.length,p+step),mn=1,mx=-1;for(let j=p;j<e;j++){mn=Math.min(mn,a[j]);mx=Math.max(mx,a[j])}x.moveTo(i,77.5+mn*62);x.lineTo(i,77.5+mx*62)}x.strokeStyle='#aeb6c0';x.stroke();x.strokeStyle='#30353d';x.beginPath();x.moveTo(0,77.5);x.lineTo(r.width,77.5);x.stroke()}
+function labels(){ $('speedV').textContent=(+$('speed').value).toFixed(2)+'×';$('pitchV').textContent=(+$('pitch').value>=0?'+':'')+(+$('pitch').value).toFixed(2)+' st';$('fineV').textContent=(+$('fine').value>=0?'+':'')+$('fine').value+' ct';$('volumeV').textContent=Math.round(+$('volume').value*100)+'%';$('panV').textContent=(+$('pan').value>=0?'+':'')+(+$('pan').value).toFixed(2);$('lowV').textContent=(+$('low').value>=0?'+':'')+(+$('low').value).toFixed(1)+' dB';$('highV').textContent=(+$('high').value>=0?'+':'')+(+$('high').value).toFixed(1)+' dB';$('loopV').textContent=$('loop').checked?'ON':'OFF';$('pitch').disabled=$('fine').disabled=$('tape').checked;sendParams()}
+function makeGraph(){if(graph)return;const input=node;const low=ctx.createBiquadFilter(),high=ctx.createBiquadFilter(),gain=ctx.createGain(),pan=ctx.createStereoPanner();low.type='lowshelf';low.frequency.value=180;high.type='highshelf';high.frequency.value=4500;graph={low,high,gain,pan};input.connect(low).connect(high).connect(gain).connect(pan).connect(ctx.destination);applyMix()}
+function applyMix(){if(!graph)return;graph.gain.gain.value=+$('volume').value;graph.pan.pan.value=+$('pan').value;graph.low.gain.value=+$('low').value;graph.high.gain.value=+$('high').value}
+function sendParams(){if(!node)return;node.port.postMessage({type:'params',speed:+$('speed').value,pitch:$('tape').checked?+$('speed').value:ratio(),loop:$('loop').checked,grain:Math.round(ctx.sampleRate*grainMs()/1000)})}
+async function preview(){if(!buffer)return;await init();stop(false);node=new AudioWorkletNode(ctx,'audioshift',{outputChannelCount:[2]});makeGraph();const channels=[];const transfers=[];for(let ch=0;ch<buffer.numberOfChannels;ch++){const a=new Float32Array(buffer.getChannelData(ch));channels.push(a.buffer);transfers.push(a.buffer)}if(buffer.numberOfChannels===1){const a=new Float32Array(buffer.getChannelData(0));channels.push(a.buffer);transfers.push(a.buffer)}node.port.postMessage({type:'buffer',channels,offset:0},transfers);sendParams();playing=true;const duration=buffer.duration/+$('speed').value;clearTimeout(playTimer);if(!$('loop').checked)playTimer=setTimeout(()=>stop(),duration*1000+100);$('status').textContent='Preview — realtime';}
+function stop(update=true){if(node){try{node.port.postMessage({type:'stop'})}catch{}try{node.disconnect()}catch{}node=null}playing=false;clearTimeout(playTimer);if(graph){try{graph.low.disconnect()}catch{}graph=null}if(update&&buffer)$('status').textContent=`Ready • ${buffer.duration.toFixed(2)} sec • ${buffer.sampleRate} Hz • ${buffer.numberOfChannels}ch`}
+function audioBufferToWav(b){const ch=b.numberOfChannels,sr=b.sampleRate,n=b.length,ab=new ArrayBuffer(44+n*ch*2),v=new DataView(ab);let o=0;const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i))},u16=x=>{v.setUint16(o,x,true);o+=2},u32=x=>{v.setUint32(o,x,true);o+=4};w('RIFF');u32(36+n*ch*2);w('WAVEfmt ');u32(16);u16(1);u16(ch);u32(sr);u32(sr*ch*2);u16(ch*2);u16(16);w('data');u32(n*ch*2);for(let i=0;i<n;i++)for(let c=0;c<ch;c++){let x=clamp(b.getChannelData(c)[i],-1,1);v.setInt16(o,x<0?x*32768:x*32767,true);o+=2}return new Blob([ab],{type:'audio/wav'})}
+async function exportWav(){if(!buffer)return;stop();$('export').disabled=true;$('status').textContent='Exporting…';const speed=+$('speed').value,pr=$('tape').checked?speed:ratio(),sr=buffer.sampleRate,outN=Math.ceil(buffer.length/speed),o=ctx.createBuffer(buffer.numberOfChannels,outN,sr);const g=Math.round(sr*grainMs()/1000),h=Math.max(64,Math.floor(g*.33)),win=new Float32Array(g);for(let i=0;i<g;i++)win[i]=.5-.5*Math.cos(2*Math.PI*i/(g-1));for(let ch=0;ch<buffer.numberOfChannels;ch++){const s=buffer.getChannelData(ch),d=o.getChannelData(ch);for(let pos=0;pos<outN;pos+=h){const center=pos*speed;for(let i=0;i<g&&pos+i<outN;i++){const q=center+(i-g*.5)*pr;if(q<0||q>=s.length-1)continue;const a=q|0,f=q-a;d[pos+i]+=(s[a]*(1-f)+s[a+1]*f)*win[i]}if((pos/h&31)===0){$('status').textContent=`Exporting… ${Math.round(pos/outN*100)}%`;await new Promise(requestAnimationFrame)}}for(let i=0;i<d.length;i++)d[i]*=.72}const blob=audioBufferToWav(o),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='AudioShift.wav';a.click();$('export').disabled=false;$('status').textContent=`Exported • ${o.duration.toFixed(2)} sec`}
+$('drop').onclick=()=>$('file').click();$('file').onchange=e=>e.target.files[0]&&decode(e.target.files[0]);['dragenter','dragover'].forEach(v=>$('drop').addEventListener(v,e=>{e.preventDefault();$('drop').classList.add('over')}));['dragleave','drop'].forEach(v=>$('drop').addEventListener(v,e=>{e.preventDefault();$('drop').classList.remove('over')}));$('drop').ondrop=e=>{const f=e.dataTransfer.files[0];if(f)decode(f)};$('play').onclick=preview;$('stop').onclick=()=>stop();$('export').onclick=exportWav;['speed','pitch','fine','tape','volume','pan','low','high','loop','quality'].forEach(id=>$(id).oninput=labels);document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{$('pitch').value=b.dataset.p;$('fine').value=0;labels()});$('reset').onclick=()=>{$('speed').value=1;$('pitch').value=0;$('fine').value=0;$('tape').checked=false;$('volume').value=1;$('pan').value=0;$('low').value=0;$('high').value=0;$('loop').checked=false;$('quality').value='normal';labels()};addEventListener('resize',draw);labels();
 </script></body></html>
