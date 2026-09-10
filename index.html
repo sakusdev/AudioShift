@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AudioShift</title>
+<style>body{margin:0;background:#101216;color:#eee;font-family:system-ui,sans-serif}.app{max-width:900px;margin:auto;padding:24px}.drop{padding:40px;border:2px dashed #555;border-radius:16px;text-align:center;cursor:pointer;background:#17191e}.card{background:#17191e;border:1px solid #292d35;border-radius:14px;padding:18px;margin-top:14px}.row{display:grid;grid-template-columns:80px 1fr 75px;gap:12px;align-items:center;margin:14px 0}input{width:100%}output{text-align:right}button{padding:9px 13px;border-radius:9px;border:1px solid #444;background:#282c33;color:#fff}button.primary{background:#eee;color:#111}canvas{width:100%;height:150px;background:#0b0d10;border-radius:10px}.status{color:#9aa2ad;font-size:13px;margin-top:8px}audio{width:100%;margin-top:10px}@media(max-width:600px){.row{grid-template-columns:65px 1fr 65px}}</style>
+</head><body><main class="app"><h1>🎛 AudioShift</h1>
+<div id="drop" class="drop"><b>音声ファイルをドロップ</b><br><small>クリックして選択</small><input id="file" type="file" accept="audio/*" hidden></div>
+<div class="card"><canvas id="wave"></canvas><div id="status" class="status">ファイルを読み込んでください</div></div>
+<div class="card"><div class="row"><label>速度</label><input id="speed" type="range" min=".25" max="4" step=".01" value="1"><output id="speedV">1.00×</output></div>
+<div class="row"><label>ピッチ</label><input id="pitch" type="range" min="-24" max="24" step=".01" value="0"><output id="pitchV">0 st</output></div>
+<div class="row"><label>Fine</label><input id="fine" type="range" min="-100" max="100" value="0"><output id="fineV">0 ct</output></div>
+<label><input id="tape" type="checkbox"> Tape mode</label> <button id="reset">Reset</button></div>
+<div class="card"><button id="play" class="primary" disabled>▶ Play</button> <button id="stop" disabled>■ Stop</button><audio id="native" controls></audio></div>
+</main>
+<script>
+const $=x=>document.getElementById(x);let ctx=null,buffer=null,source=null;
+async function decode(f){$('status').textContent='Reading file…';try{const bytes=await f.arrayBuffer();if(!bytes.byteLength)throw Error('empty');ctx=ctx||new AudioContext();if(ctx.state==='suspended')await ctx.resume();$('status').textContent='Decoding…';buffer=await ctx.decodeAudioData(bytes.slice(0));$('status').textContent=`Ready • ${buffer.duration.toFixed(2)} sec • ${buffer.sampleRate} Hz`;draw();$('play').disabled=$('stop').disabled=false}catch(e){console.error(e);$('status').textContent='Decode failed: '+(e.message||'unsupported format')}}
+function draw(){const c=$('wave'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=150*d;const x=c.getContext('2d');x.scale(d,d);const data=buffer.getChannelData(0),step=Math.max(1,Math.floor(data.length/r.width));x.beginPath();for(let i=0;i<r.width;i++){let a=i*step,b=Math.min(data.length,a+step),mn=1,mx=-1;for(let j=a;j<b;j++){mn=Math.min(mn,data[j]);mx=Math.max(mx,data[j])}x.moveTo(i,75+mn*60);x.lineTo(i,75+mx*60)}x.strokeStyle='#aeb6c0';x.stroke()}
+function labels(){$('speedV').textContent=(+$('speed').value).toFixed(2)+'×';$('pitchV').textContent=(+$('pitch').value>=0?'+':'')+(+$('pitch').value).toFixed(2)+' st';$('fineV').textContent=(+$('fine').value>=0?'+':'')+$('fine').value+' ct';if($('tape').checked)$('pitch').disabled=true;else $('pitch').disabled=false}
+$('drop').onclick=()=>$('file').click();$('file').onchange=e=>e.target.files[0]&&decode(e.target.files[0]);['dragenter','dragover'].forEach(v=>$('drop').addEventListener(v,e=>{e.preventDefault();$('drop').style.borderColor='#aaa'}));$('drop').ondrop=e=>{e.preventDefault();$('drop').style.borderColor='#555';let f=e.dataTransfer.files[0];if(f)decode(f)};
+$('play').onclick=async()=>{if(!buffer)return;await ctx.resume();if(source)try{source.stop()}catch{}source=ctx.createBufferSource();source.buffer=buffer;const s=+$('speed').value;source.playbackRate.value=s;source.connect(ctx.destination);source.start();$('status').textContent='Playing…'};$('stop').onclick=()=>{if(source){try{source.stop()}catch{}source=null}if(buffer)$('status').textContent=`Ready • ${buffer.duration.toFixed(2)} sec`};
+['speed','pitch','fine','tape'].forEach(id=>$(id).oninput=labels);$('reset').onclick=()=>{$('speed').value=1;$('pitch').value=0;$('fine').value=0;$('tape').checked=false;labels()};labels();
+</script></body></html>
